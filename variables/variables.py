@@ -181,12 +181,14 @@ def muscle_left_write_to_file(data):
     nz = 2*mz + 1
     # # compute average z-value of end of muscle
     z_value = 0
+    z_value_end = 0
     x_traction_end = 0
     y_traction_end = 0
     z_traction_end = 0
     for j in range(ny):
         for i in range(nx):
-            z_value += z_data[(nz-1)*nx*ny + j*nx + i]
+            z_value += z_data[j*nx + i]
+            z_value_end += z_data[(nz-1)*nx*ny + j*nx + i]
             x_traction_end += x_traction[(nz-1)*nx*ny + j*nx + i]
             y_traction_end += y_traction[(nz-1)*nx*ny + j*nx + i]
             z_traction_end += z_traction[(nz-1)*nx*ny + j*nx + i]
@@ -197,7 +199,7 @@ def muscle_left_write_to_file(data):
     z_traction_end /= ny*nx
 
     f = open(case_name + "muscle_left.txt", "a")
-    f.write("{:6.2f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f}\n".format(t, z_value, x_traction_end, y_traction_end, z_traction_end))
+    f.write("{:6.2f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f}\n".format(t, z_value, z_value_end, x_traction_end, y_traction_end, z_traction_end))
     f.close()
 
 
@@ -243,21 +245,6 @@ def tendon_write_to_file(data):
     f = open(case_name + "tendon.txt", "a")
     f.write("{:6.2f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} \n".format(t, z_value_begin, x_traction_begin, y_traction_begin, z_traction_begin, z_value_end, x_traction_end, y_traction_end, z_traction_end))
     f.close()
-
-# parameters for precontraction
-# -----------------------------
-# load
-precontraction_constant_body_force = (0,0,10*9.81e-4)   # [cm/ms^2], gravity constant for the body force
-precontraction_bottom_traction = [0,0,0]        # [N]
-constant_gamma = 0.1    # 0.3 works, the active stress will be pmax*constant_gamma
-
-# parameters for prestretch
-# -----------------------------
-# load
-prestretch_constant_body_force = (0,0,-9.81e-4)   # [cm/ms^2], gravity constant for the body force
-prestretch_bottom_traction = [0,0,-10]        # [N]  (-30 also works)
-
-constant_gamma = 0.1    # 0.3 works, the active stress will be pmax*constant_gamma
 
 
 # callback function for artifical stress values, instead of multidomain
