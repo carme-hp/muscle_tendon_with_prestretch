@@ -13,18 +13,38 @@ script_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_path)
 sys.path.insert(0, os.path.join(script_path,'variables'))
 
-import variables              # file variables.py, defines default values for all parameters, you can set the parameters there
-from create_partitioned_meshes_for_settings import *   # file create_partitioned_meshes_for_settings with helper functions about own subdomain
-from helper import *
+import variables              # file variables.py, defined default values for all parameters, you can set the parameters there
 
-variables.scenario_name = "tendon"
+# if first argument contains "*.py", it is a custom variable definition file, load these values
+if ".py" in sys.argv[0]:
+  variables_path_and_filename = sys.argv[0]
+  variables_path,variables_filename = os.path.split(variables_path_and_filename)  # get path and filename 
+  sys.path.insert(0, os.path.join(script_path,variables_path))                    # add the directory of the variables file to python path
+  variables_module,_ = os.path.splitext(variables_filename)                       # remove the ".py" extension to get the name of the module
+  
+  if rank_no == 0:
+    print("Loading variables from \"{}\".".format(variables_path_and_filename))
+    
+  custom_variables = importlib.import_module(variables_module, package=variables_filename)    # import variables module
+  variables.__dict__.update(custom_variables.__dict__)
+  sys.argv = sys.argv[1:]     # remove first argument, which now has already been parsed
+else:
+  if rank_no == 0:
+    print("Warning: There is no variables file, e.g:\n ./muscle_precice ../settings_muscle_left.py variables.py\n")
+  exit(0)
+
 
 # compute partitioning
 if rank_no == 0:
   if n_ranks != variables.n_subdomains_x*variables.n_subdomains_y*variables.n_subdomains_z:
     print("\n\nError! Number of ranks {} does not match given partitioning {} x {} x {} = {}.\n\n".format(n_ranks, variables.n_subdomains_x, variables.n_subdomains_y, variables.n_subdomains_z, variables.n_subdomains_x*variables.n_subdomains_y*variables.n_subdomains_z))
     sys.exit(-1)
-    
+
+# initialize all helper variables
+from helper import *
+
+variables.scenario_name = "tendon"
+
 # update material parameters
 if (variables.tendon_material == "nonLinear"):
     c = 9.98                    # [N/cm^2=kPa]
