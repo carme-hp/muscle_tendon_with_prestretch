@@ -12,70 +12,70 @@
     <data:vector name="Traction"/>
 
 
-    <mesh name="TendonMeshLeft">
+    <mesh name="TendonMeshRight">
        <use-data name="Displacement"/>
        <use-data name="Velocity"/>
        <use-data name="Traction"/>
     </mesh>
 
-    <mesh name="MuscleMeshLeft">
+    <mesh name="MuscleMeshRight">
        <use-data name="Displacement"/>
        <use-data name="Velocity"/>
        <use-data name="Traction"/>
     </mesh>
 
     <participant name="TendonSolver"> 
-      <use-mesh name="TendonMeshLeft" provide="yes"/>
-      <use-mesh name="MuscleMeshLeft" from="MuscleSolverLeft"/>
+      <use-mesh name="TendonMeshRight" provide="yes"/>
+      <use-mesh name="MuscleMeshRight" from="MuscleSolverRight"/>
 
-      <write-data name="Displacement"  mesh="TendonMeshLeft"/>
-      <write-data name="Velocity"  mesh="TendonMeshLeft"/>
-      <read-data  name="Traction"      mesh="TendonMeshLeft"/>
+      <write-data name="Displacement"  mesh="TendonMeshRight"/>
+      <write-data name="Velocity"  mesh="TendonMeshRight"/>
+      <read-data  name="Traction"      mesh="TendonMeshRight"/>
 
-      <mapping:nearest-neighbor direction="read" from="MuscleMeshLeft" to="TendonMeshLeft" constraint="consistent"/>
+      <mapping:nearest-neighbor direction="read" from="MuscleMeshRight" to="TendonMeshRight" constraint="consistent"/>
 
       <export:vtk directory="preCICE-output" />
     </participant>
 
-    <participant name="MuscleSolverLeft">
-      <use-mesh name="MuscleMeshLeft"  provide="yes"/>
-      <use-mesh name="TendonMeshLeft"     from="TendonSolver"/>
+    <participant name="MuscleSolverRight">
+      <use-mesh name="MuscleMeshRight"  provide="yes"/>
+      <use-mesh name="TendonMeshRight"     from="TendonSolver"/>
 
-      <read-data  name="Displacement"  mesh="MuscleMeshLeft"/>
-      <read-data  name="Velocity"  mesh="MuscleMeshLeft"/>
-      <write-data name="Traction"      mesh="MuscleMeshLeft"/>
+      <read-data  name="Displacement"  mesh="MuscleMeshRight"/>
+      <read-data  name="Velocity"  mesh="MuscleMeshRight"/>
+      <write-data name="Traction"      mesh="MuscleMeshRight"/>
 
-      <mapping:nearest-neighbor direction="read" from="TendonMeshLeft" to="MuscleMeshLeft" constraint="consistent"/>
+      <mapping:nearest-neighbor direction="read" from="TendonMeshRight" to="MuscleMeshRight" constraint="consistent"/>
       <export:vtk directory="preCICE-output"/>
     </participant>
     
 
     <!-- Communication method, use TCP sockets, Change network to "ib0" on SuperMUC -->
-    <m2n:sockets from="TendonSolver" to="MuscleSolverLeft" network="lo" />
+    <m2n:sockets from="TendonSolver" to="MuscleSolverRight" network="lo" />
 
     <coupling-scheme:serial-explicit>
-      <participants second="TendonSolver" first="MuscleSolverLeft"/>
+      <participants second="TendonSolver" first="MuscleSolverRight"/>
       <max-time value="20.0"/>           
       <time-window-size value="0.01"/>   
-      <exchange data="Displacement"    mesh="TendonMeshLeft"    from="TendonSolver" to="MuscleSolverLeft"/>
-      <exchange data="Velocity"    mesh="TendonMeshLeft"    from="TendonSolver" to="MuscleSolverLeft"/>
-      <exchange data="Traction"        mesh="MuscleMeshLeft" from="MuscleSolverLeft" to="TendonSolver"/>  
+      <exchange data="Displacement"    mesh="TendonMeshRight"    from="TendonSolver" to="MuscleSolverRight"/>
+      <exchange data="Velocity"    mesh="TendonMeshRight"    from="TendonSolver" to="MuscleSolverRight"/>
+      <exchange data="Traction"        mesh="MuscleMeshRight" from="MuscleSolverRight" to="TendonSolver"/>  
     </coupling-scheme:serial-explicit>
 
      <!-- <coupling-scheme:parallel-implicit>
-      <participants first="MuscleSolverLeft" second="TendonSolver"/>
+      <participants first="MuscleSolverRight" second="TendonSolver"/>
 
       <max-time value="20.0"/>
       <time-window-size value="0.01"/>
 
-      <exchange data="Displacement" mesh="TendonMeshLeft" from="TendonSolver" to="MuscleSolverLeft"/>
-      <exchange data="Velocity" mesh="TendonMeshLeft" from="TendonSolver" to="MuscleSolverLeft"/>
-      <exchange data="Traction" mesh="MuscleMeshLeft" from="MuscleSolverLeft" to="TendonSolver"/>
+      <exchange data="Displacement" mesh="TendonMeshRight" from="TendonSolver" to="MuscleSolverRight"/>
+      <exchange data="Velocity" mesh="TendonMeshRight" from="TendonSolver" to="MuscleSolverRight"/>
+      <exchange data="Traction" mesh="MuscleMeshRight" from="MuscleSolverRight" to="TendonSolver"/>
 
       <acceleration:IQN-ILS>
-        <data name="Displacement" mesh="TendonMeshLeft"/>
-        <data name="Velocity" mesh="TendonMeshLeft"/>
-        <data name="Traction" mesh="MuscleMeshLeft"/>
+        <data name="Displacement" mesh="TendonMeshRight"/>
+        <data name="Velocity" mesh="TendonMeshRight"/>
+        <data name="Traction" mesh="MuscleMeshRight"/>
         <preconditioner type="residual-sum"/>
         <filter type="QR2" limit="1e-2"/>
         <initial-relaxation value="0.9"/>
@@ -84,11 +84,11 @@
       </acceleration:IQN-ILS>
 
       <max-iterations value="2"/>
-      <min-iteration-convergence-measure min-iterations="2" data="Displacement" mesh="TendonMeshLeft" strict="0" suffices="0"/>
+      <min-iteration-convergence-measure min-iterations="2" data="Displacement" mesh="TendonMeshRight" strict="0" suffices="0"/>
 
-     <absolute-convergence-measure limit="1e-5" data="Displacement" mesh="TendonMeshLeft" strict="0"/>
-      <absolute-convergence-measure limit="1e-5" data="Velocity" mesh="TendonMeshLeft" strict="0"/>
-      <absolute-convergence-measure limit="1e-8" data="Traction" mesh="MuscleMeshLeft" strict="0"/> -->
+     <absolute-convergence-measure limit="1e-5" data="Displacement" mesh="TendonMeshRight" strict="0"/>
+      <absolute-convergence-measure limit="1e-5" data="Velocity" mesh="TendonMeshRight" strict="0"/>
+      <absolute-convergence-measure limit="1e-8" data="Traction" mesh="MuscleMeshRight" strict="0"/> -->
 
 
     <!-- </coupling-scheme:parallel-implicit> -->

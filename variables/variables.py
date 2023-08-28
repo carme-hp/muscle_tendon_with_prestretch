@@ -40,8 +40,8 @@ n_points_whole_fiber = 60
 n_fibers_x = 8
 n_fibers_y = 8
 
-muscle_left_offset = [0.0, 0.0, 0.0]
-tendon_offset = [0.0, 0.0, muscle_extent[2]]
+tendon_offset = [0.0, 0.0, 0.0]
+muscle_right_offset = [0.0, 0.0, tendon_extent[2]]
 
 rho = 10   ## [1e-4 kg/cm^3] density of the water
 
