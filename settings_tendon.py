@@ -3,6 +3,7 @@
 import sys, os
 import numpy as np
 import sys
+import importlib
 
 # parse rank arguments
 rank_no = (int)(sys.argv[-2])
@@ -13,7 +14,7 @@ script_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, script_path)
 sys.path.insert(0, os.path.join(script_path,'variables'))
 
-import variables              # file variables.py, defined default values for all parameters, you can set the parameters there
+import variables              # file variables.py, defined default values for all parameters, you can set the parameters there  
 
 # if first argument contains "*.py", it is a custom variable definition file, load these values
 if ".py" in sys.argv[0]:
@@ -30,21 +31,19 @@ if ".py" in sys.argv[0]:
   sys.argv = sys.argv[1:]     # remove first argument, which now has already been parsed
 else:
   if rank_no == 0:
-    print("Warning: There is no variables file, e.g:\n ./muscle_precice ../settings_muscle_left.py variables.py\n")
+    print("Warning: There is no variables file, e.g:\n ./multidomain_prestretch ../settings_prestretch.py shortened.py\n")
   exit(0)
 
+from helper import *
+
+variables.scenario_name = "tendon"
 
 # compute partitioning
 if rank_no == 0:
   if n_ranks != variables.n_subdomains_x*variables.n_subdomains_y*variables.n_subdomains_z:
     print("\n\nError! Number of ranks {} does not match given partitioning {} x {} x {} = {}.\n\n".format(n_ranks, variables.n_subdomains_x, variables.n_subdomains_y, variables.n_subdomains_z, variables.n_subdomains_x*variables.n_subdomains_y*variables.n_subdomains_z))
     sys.exit(-1)
-
-# initialize all helper variables
-from helper import *
-
-variables.scenario_name = "tendon"
-
+    
 # update material parameters
 if (variables.tendon_material == "nonLinear"):
     c = 9.98                    # [N/cm^2=kPa]
@@ -120,7 +119,7 @@ config = {
       "timeStepOutputInterval":   100,                        # interval in which to display current timestep and time in console
       "timestepWidth":            variables.dt_elasticity,                          # coupling time step width, must match the value in the precice config
       "couplingEnabled":          True,                       # if the precice coupling is enabled, if not, it simply calls the nested solver, for debugging
-      "preciceConfigFilename":    "../precice_config.xml",    # the preCICE configuration file
+      "preciceConfigFilename":    variables.precice_file,    # the preCICE configuration file
       "preciceParticipantName":   "TendonSolver",             # name of the own precice participant, has to match the name given in the precice xml config file
       "preciceMeshes": [                                      # the precice meshes get created as the top or bottom surface of the main geometry mesh of the nested solver
         {
@@ -139,7 +138,7 @@ config = {
         {
           "mode":                 "read-traction",                    # mode is one of "read-displacements-velocities", "read-traction", "write-displacements-velocities", "write-traction"
           "preciceMeshName":      "TendonMeshLeft",                    # name of the precice coupling surface mesh, as given in the precice xml settings 
-          "tractionName":         "Traction",                         # name of the traction "data", i.e. field variable, as given in the precice xml settings file
+          "tractionName":         "Traction",                         # name of the traction "data", i.e. field variable, as given in the precice xml settings file        # name of the traction "data", i.e. field variable, as given in the precice xml settings file
         }
       ],
     
@@ -210,7 +209,7 @@ config = {
       # "totalForceTopElementNosGlobal":     [(nz-1)*ny*nx + j*nx + i for j in range(ny) for i in range(nx)],   # global element nos of the top elements used to compute the total forces in the log file totalForceTopElementsGlobal
 
       "OutputWriter" : [
-          {"format": "Paraview", "outputInterval": 1, "filename": "out/" + variables.case_name + "/" +  variables.scenario_name + "/mechanics_3D", "binary": True, "fixedFormat": False, "onlyNodalValues":True, "combineFiles":True, "fileNumbering": "incremental"},
+          {"format": "Paraview", "outputInterval": 1, "filename": "out/" + variables.case_name + "/" + variables.scenario_name + "/mechanics_3D", "binary": True, "fixedFormat": False, "onlyNodalValues":True, "combineFiles":True, "fileNumbering": "incremental"},
           {"format": "PythonCallback", "outputInterval": 1, "callback": variables.tendon_write_to_file, "onlyNodalValues":True, "filename": "", "fileNumbering":'incremental'},
 
         ],

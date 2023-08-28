@@ -1,7 +1,8 @@
-case_name = "case0"
-prestretch_traction = 0
 # scenario name for log file
+case_name = "nonlinear_1N"
 scenario_name = ""
+precice_file = "../precice_config.xml"
+zdisplacement = 0.15223752
 
 # timing parameters
 # -----------------
@@ -35,13 +36,12 @@ n_elements_tendon = [8,8,8]
 
 muscle_extent = [3.0, 3.0, 15.0] # [cm, cm, cm]
 n_elements_muscle = [8, 8, 24] # linear elements. each qudaratic element uses the combined nodes of 8 linear elements
-n_points_whole_fiber = 40
-n_fibers_x = 4
-n_fibers_y = 4
+n_points_whole_fiber = 60
+n_fibers_x = 8
+n_fibers_y = 8
 
 muscle_left_offset = [0.0, 0.0, 0.0]
 tendon_offset = [0.0, 0.0, muscle_extent[2]]
-muscle_right_offset = [0.0, 0.0, tendon_extent[2]+muscle_extent[2]]
 
 rho = 10   ## [1e-4 kg/cm^3] density of the water
 
@@ -50,16 +50,6 @@ force = 1e5
 elasticity_dirichlet_bc = {}
 elasticity_neumann_bc = []
 meshes = {}
-
-# prestretch parameters
-
-prestretch_bottom_traction_left=  [0,0,-prestretch_traction]  
-prestretch_bottom_traction_right=  [0,0,prestretch_traction]       
-
-constant_body_force = (0,0,0) # [cm/ms^2],  (0,0,-9.81e-4)gravity constant for the body force
-
-prestretch_elasticity_dirichlet_bc = {}
-
 # material parameters
 # --------------------
 Pmax = 7.3                          # maximum stress [N/cm^2]
@@ -127,8 +117,8 @@ diffusion_solver_reltol = 1e-10
 
 elasticity_solver_type = "preonly"
 elasticity_preconditioner_type = "lu"
-snes_max_iterations = 34                  # maximum number of iterations in the nonlinear solver
-snes_rebuild_jacobian_frequency = 1       # how often the jacobian should be recomputed, -1 indicates NEVER rebuild, 1 means rebuild every time the Jacobian is computed within a single nonlinear solve, 2 means every second time the Jacobian is built etc. -2 means rebuild at next chance but then never again 
+snes_max_iterations = 10                  # maximum number of iterations in the nonlinear solver
+snes_rebuild_jacobian_frequency = 2       # how often the jacobian should be recomputed, -1 indicates NEVER rebuild, 1 means rebuild every time the Jacobian is computed within a single nonlinear solve, 2 means every second time the Jacobian is built etc. -2 means rebuild at next chance but then never again 
 snes_relative_tolerance = 1e-5      # relative tolerance of the nonlinear solver
 snes_absolute_tolerance = 1e-5      # absolute tolerance of the nonlinear solver
 linear_relative_tolerance = 1e-5           # relative tolerance of the residual of the linear solver
@@ -171,100 +161,52 @@ def get_from_obj(data, path):
 def muscle_left_write_to_file(data):
     t = get_from_obj(data, [0, 'currentTime'])
     z_data = get_from_obj(data, [0, 'data', ('name','geometry'), 'components', 2, 'values'])
-    x_traction = get_from_obj(data, [0, 'data', ('name','T (material traction)'), 'components', 0, 'values'])
-    y_traction = get_from_obj(data, [0, 'data', ('name','T (material traction)'), 'components', 1, 'values'])
-    z_traction = get_from_obj(data, [0, 'data', ('name','T (material traction)'), 'components', 2, 'values'])
 
     [mx, my, mz] = get_from_obj(data, [0, 'nElementsLocal'])
     nx = 2*mx + 1
     ny = 2*my + 1
     nz = 2*mz + 1
-    # # compute average z-value of end of muscle
-    z_value = 0
-    z_value_end = 0
-    x_traction_end = 0
-    y_traction_end = 0
-    z_traction_end = 0
+    # compute average z-value of end of muscle
+    z_value_begin = 0.0
+    z_value_end = 0.0
+
     for j in range(ny):
         for i in range(nx):
-            z_value += z_data[j*nx + i]
+            z_value_begin += z_data[j*nx + i]
             z_value_end += z_data[(nz-1)*nx*ny + j*nx + i]
-            x_traction_end += x_traction[(nz-1)*nx*ny + j*nx + i]
-            y_traction_end += y_traction[(nz-1)*nx*ny + j*nx + i]
-            z_traction_end += z_traction[(nz-1)*nx*ny + j*nx + i]
 
-    z_value /= ny*nx
-    x_traction_end /= ny*nx
-    y_traction_end /= ny*nx
-    z_traction_end /= ny*nx
+
+    z_value_begin /= ny*nx
+    z_value_end /= ny*nx
+
 
     f = open(case_name + "muscle_left.txt", "a")
-    f.write("{:6.2f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f}\n".format(t, z_value, z_value_end, x_traction_end, y_traction_end, z_traction_end))
+    f.write("{:6.2f} {:+2.8f} {:+2.8f}\n".format(t,z_value_begin, z_value_end))
     f.close()
 
 
 def tendon_write_to_file(data):
     t = get_from_obj(data, [0, 'currentTime'])
     z_data = get_from_obj(data, [0, 'data', ('name','geometry'), 'components', 2, 'values'])
-    x_traction = get_from_obj(data, [0, 'data', ('name','T (material traction)'), 'components', 0, 'values'])
-    y_traction = get_from_obj(data, [0, 'data', ('name','T (material traction)'), 'components', 1, 'values'])
-    z_traction = get_from_obj(data, [0, 'data', ('name','T (material traction)'), 'components', 2, 'values'])
 
     [mx, my, mz] = get_from_obj(data, [0, 'nElementsLocal'])
     nx = 2*mx + 1
     ny = 2*my + 1
     nz = 2*mz + 1
-
-    # compute average z-value of begin of muscle
+    # compute average z-value of end of muscle
     z_value_begin = 0.0
-    x_traction_begin = 0.0
-    y_traction_begin = 0.0
-    z_traction_begin = 0.0
-    z_value_end =  0.0
-    x_traction_end = 0.0
-    y_traction_end = 0.0
-    z_traction_end = 0.0
+    z_value_end = 0.0
+
     for j in range(ny):
         for i in range(nx):
-            z_value_begin += z_data[ j*nx + i]
-            x_traction_begin += x_traction[ j*nx + i]
-            y_traction_begin += y_traction[ j*nx + i]
-            z_traction_begin += z_traction[ j*nx + i]
+            z_value_begin += z_data[j*nx + i]
             z_value_end += z_data[(nz-1)*nx*ny + j*nx + i]
-            x_traction_end += x_traction[ (nz-1)*nx*ny + j*nx + i]
-            y_traction_end += y_traction[ (nz-1)*nx*ny + j*nx + i]
-            z_traction_end += z_traction[ (nz-1)*nx*ny + j*nx + i]
+
     z_value_begin /= ny*nx
-    x_traction_begin /= ny*nx
-    y_traction_begin /= ny*nx
-    z_traction_begin /= ny*nx
     z_value_end /= ny*nx
-    x_traction_end /= ny*nx
-    y_traction_end /= ny*nx
-    z_traction_end /= ny*nx
+
+
     f = open(case_name + "tendon.txt", "a")
-    f.write("{:6.2f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} {:+2.8f} \n".format(t, z_value_begin, x_traction_begin, y_traction_begin, z_traction_begin, z_value_end, x_traction_end, y_traction_end, z_traction_end))
+    f.write("{:6.2f} {:+2.8f} {:+2.8f}\n".format(t,z_value_begin, z_value_end))
     f.close()
 
-
-# callback function for artifical stress values, instead of multidomain
-def set_gamma_values(n_dofs_global, n_nodes_global_per_coordinate_direction, time_step_no, current_time, values, global_natural_dofs, custom_argument):
-    # n_dofs_global:       (int) global number of dofs in the mesh where to set the values
-    # n_nodes_global_per_coordinate_direction (list of ints)   [mx, my, mz] number of global nodes in each coordinate direction. 
-    #                       For composite meshes, the values are only for the first submesh, for other meshes sum(...) equals n_dofs_global
-    # time_step_no:        (int)   current time step number
-    # current_time:        (float) the current simulation time
-    # values:              (list of floats) all current local values of the field variable, if there are multiple components, they are stored in struct-of-array memory layout 
-    #                       i.e. [point0_component0, point0_component1, ... point0_componentN, point1_component0, point1_component1, ...]
-    #                       After the call, these values will be assigned to the field variable.
-    # global_natural_dofs  (list of ints) for every local dof no. the dof no. in global natural ordering
-    # additional_argument: The value of the option "additionalArgument", can be any Python object.
-    
-    # set all values to 1
-    for i in range(len(values)):
-      values[i] = constant_gamma
-
-def set_lambda_values(n_dofs_global, n_nodes_global_per_coordinate_direction, time_step_no, current_time, values, global_natural_dofs, custom_argument):
-    # set all values to 1
-    for i in range(len(values)):
-      values[i] = 1.0

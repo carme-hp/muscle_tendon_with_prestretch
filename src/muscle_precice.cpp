@@ -3,6 +3,8 @@
 
 #include "opendihu.h"
 
+
+
 ////// Possible options
 
 // #define Shorten
@@ -66,24 +68,21 @@ int main(int argc, char *argv[])
 {
   // initialize everything, handle arguments and parse settings from input file
   DihuContext settings(argc, argv);
+
+  // Hierarchical coupling to use small time steps for spindles, golgi,
+  // motoneurons, monodomain, and bidomain coupled to the contraction solver
+  // with large time steps
   Control::PreciceAdapter<
     Control::Coupling<
-      // static trans-iso material for "prestretch"
-      SpatialDiscretization::HyperelasticitySolver<
-        Equation::SolidMechanics::TransverselyIsotropicMooneyRivlinIncompressible3D, true, Mesh::CompositeOfDimension<3>
-      >,
-      // actual simlation
-      Control::Coupling<
-        // Term1    
-        MonodomainSolver,
-        // Term2
-        MuscleContractionSolver<
-            Mesh::StructuredDeformableOfDimension<3>
-        >
+      // Term1    
+      MonodomainSolver,
+      // Term2
+      MuscleContractionSolver<
+          Mesh::StructuredDeformableOfDimension<3>
       >
     >
-  >
-  problem(settings);
+      
+  > problem(settings);
   
   problem.run();
   

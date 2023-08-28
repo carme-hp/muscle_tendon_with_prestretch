@@ -72,36 +72,6 @@ for j in range(variables.n_fibers_y):
 variables.output_writer_fibers_muscle1 = []
 variables.output_writer_emg_muscle1 = []
 
-### muscle 2
-for j in range(variables.n_fibers_y):
-  for i in range(variables.n_fibers_x):
-    fiber_no = j*variables.n_fibers_x + i
-    
-    # determine start position of fiber in (x,y)-plane
-    x = 0 + i / (variables.n_fibers_x - 1) * variables.muscle_extent[0]
-    y = 0 + j / (variables.n_fibers_y - 1) * variables.muscle_extent[1]
-
-    # loop over points of a single fiber
-    node_positions = []
-    for k in range(variables.n_points_whole_fiber):
-      x_pos = x
-      y_pos = y
-      z_pos = variables.muscle_right_offset[2] + k / (variables.n_points_whole_fiber - 1) * variables.muscle_extent[2]
-      node_positions.append([x_pos,y_pos,z_pos])
-    
-    mesh_name = "muscle2_fiber{}".format(fiber_no)
-    fiber_mesh_names.append(mesh_name)
-    
-    fiber_meshes[mesh_name] = {
-      "nodePositions": node_positions,
-      "nElements": [variables.n_points_whole_fiber - 1],
-      "inputMeshIsGlobal": True,
-      "nRanks": [n_ranks],
-    }
-
-#### set output writer
-variables.output_writer_fibers_muscle2 = []
-variables.output_writer_emg_muscle2 = []
 
 # set variable mappings for cellml model
 if "hodgkin_huxley" in variables.cellml_file and "hodgkin_huxley-razumova" not in variables.cellml_file:

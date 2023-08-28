@@ -9,6 +9,6 @@
 Import('env')     # import Environment object from calling SConstruct
 
 # create the main executable
-env.Program(target = 'muscle_precice', source = "src/muscle_with_prestretch_precice.cpp")
+env.Program(target = 'muscle_precice', source = "src/muscle_precice.cpp")
 env.Program(target = 'tendon_precice', source = "src/tendon_precice.cpp")
 
